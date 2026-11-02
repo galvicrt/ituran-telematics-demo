@@ -111,6 +111,7 @@ option(ECAL_BUILD_APP_SDK                           "Build SDK components of eCA
 option(ECAL_BUILD_SAMPLES                           "Build the eCAL samples"                                            ON)
 option(ECAL_BUILD_DOCS_SAMPLES                      "Build the eCAL documentation samples"              ${ECAL_BUILD_DOCS})
 option(ECAL_BUILD_TIMEPLUGINS                       "Build the eCAL time interfaces"                                    ON)
+option(ECAL_BUILD_TELEMATICS_GATEWAY                "Build the telematics control unit gateway"                       OFF)
 option(ECAL_BUILD_C_BINDING                         "Build eCAL C binding"                                              ON)
 option(ECAL_BUILD_CSHARP_BINDING                    "Build eCAL C# binding"                                            OFF)
 option(ECAL_BUILD_PY_BINDING                        "Build eCAL Python binding"                                        OFF)
@@ -332,6 +333,13 @@ if(ECAL_USE_HDF5)
   add_subdirectory(contrib/measurement/hdf5)
   add_subdirectory(contrib/ecalhdf5)
   add_subdirectory(contrib/measurement/base)
+endif()
+
+# --------------------------------------------------------
+# telematics control unit gateway
+# --------------------------------------------------------
+if(ECAL_BUILD_TELEMATICS_GATEWAY)
+  add_subdirectory(contrib/telematics_gateway)
 endif()
 
 # --------------------------------------------------------

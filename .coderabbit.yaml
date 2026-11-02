@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Review configuration. The coding rules themselves live in AGENTS.md files
+# next to the code, so engineers, coding assistants and code review all use
+# the same source of truth.
+
+language: en-US
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  request_changes_workflow: false
+
+  path_instructions:
+    - path: "contrib/telematics_gateway/**"
+      instructions: |
+        This is safety- and security-relevant in-vehicle software running on a
+        telematics control unit (TCU). Review it against
+        contrib/telematics_gateway/AGENTS.md, the MISRA C++:2023 / AUTOSAR C++14
+        guidelines, ISO 26262 and ISO/SAE 21434.
+        Prioritize, in this order:
+        1. Vehicle safety: actuation without a safe, fresh vehicle state; missed
+           detections (axes, directions, signs).
+        2. Security: unauthenticated or replayable remote commands, non-constant-
+           time secret comparison.
+        3. Memory safety and undefined behaviour from untrusted CAN / UDP /
+           service input: unchecked lengths, out-of-bounds access, overflow,
+           wrong byte order or missing sign extension.
+        4. Concurrency between eCAL callback threads and other threads.
+        5. Data integrity on power loss, and privacy of location / identifiers
+           in logs.
+        Cite the AGENTS.md rule ID (for example R4.1) in each finding. Do not
+        comment on style that clang-tidy already enforces.
+    - path: "contrib/telematics_gateway/tests/**"
+      instructions: |
+        Check that tests cover malformed, boundary and failure inputs, not only
+        the happy path (AGENTS.md R8.1). Point out missing negative tests for
+        each safety rule touched by the pull request.
+
+  tools:
+    clang:
+      enabled: true
+    cppcheck:
+      enabled: true
+
+  pre_merge_checks:
+    custom_checks:
+      - name: "Actuation fails safe"
+        mode: error
+        instructions: |
+          If the pull request adds or changes code that actuates the vehicle
+          (immobilizer, relays, locks), fail unless the command is refused when
+          the vehicle state is unknown, stale or shows the vehicle moving
+          (AGENTS.md R4.1, R4.2).
+      - name: "Remote commands authenticated"
+        mode: error
+        instructions: |
+          If the pull request handles remote commands, fail unless every command
+          type is MAC-authenticated, MACs are compared in constant time, and
+          replayed command IDs are rejected (AGENTS.md R6.1 to R6.3).
+      - name: "No location or IDs in logs"
+        mode: warning
+        instructions: |
+          Warn if latitude/longitude, VIN, IMEI or driver identifiers are logged
+          at INFO level or above (AGENTS.md R7.1).
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/AGENTS.md"
